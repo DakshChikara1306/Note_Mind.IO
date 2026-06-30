@@ -9,7 +9,6 @@ export const generateGeminiResponse = async (prompt, retries = 3, delayMs = 1500
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
-                // System instructions force the model to respect your object keys
                 systemInstruction: {
                     parts: [{ text: "You are a structural data generator. You must return valid JSON matching the schema expected by the application: subTopics, questions (short, long, diagram), revisionPoints, charts, diagram." }]
                 },
@@ -19,11 +18,12 @@ export const generateGeminiResponse = async (prompt, retries = 3, delayMs = 1500
             })
         });
 
-        if (response.status === 503 || response.status === 429) {
+        // Handle temporary Google server throttling natively
+        if (response.status === 503 || response.status === 429 || response.status === 500) {
             if (retries > 0) {
-                console.warn(`[Gemini API Warning]: Server busy (${response.status}). Retrying...`);
+                console.warn(`[Gemini API Warning]: Server busy (${response.status}). Retrying attempt left: ${retries}...`);
                 await delay(delayMs);
-                return await generateGeminiResponse(prompt, retries - 1, delayMs * 2);
+                return await generateGeminiResponse(prompt, retries - 1, delayMs * 1.5);
             }
         }
 
@@ -41,9 +41,10 @@ export const generateGeminiResponse = async (prompt, retries = 3, delayMs = 1500
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) text = jsonMatch[0];
 
-        const parsedJSON = JSON.parse(text);
+        // This line can throw a syntax error if Gemini formatting glitches
+        const parsedJSON = JSON.parse(text); 
         
-        // Critical Fallbacks
+        // Critical Default Fallbacks
         if (!parsedJSON.subTopics) parsedJSON.subTopics = { "⭐": [], "⭐⭐": [], "⭐⭐⭐": [] };
         if (!parsedJSON.questions) parsedJSON.questions = { short: [], long: [], diagram: "" };
         if (!parsedJSON.questions.short) parsedJSON.questions.short = [];
@@ -55,7 +56,13 @@ export const generateGeminiResponse = async (prompt, retries = 3, delayMs = 1500
         return parsedJSON;
         
     } catch (error) {
-        console.error("Detailed Error in generateGeminiResponse:", error.message || error);
-        throw error; // Re-throw so generateNotes catches it
+        // 💥 CRITICAL UPGRADE: If JSON parsing fails or another error occurs, 
+        // retry the request to get a clean response string from Gemini.
+        if (retries > 0) {
+            console.error(`[Parsing/Network Exception]: ${error.message}. Re-querying Gemini nodes immediately...`);
+            await delay(delayMs);
+            return await generateGeminiResponse(prompt, retries - 1, delayMs * 1.5);
+        }
+        throw error; // If all retries fail, bubble up the error to generateNotes
     }
 };
