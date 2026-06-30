@@ -1,9 +1,9 @@
-import UserModel from "../models/UserModel.js";
+import Usermodel from "../models/usermodel.js";
 
 export const getCurrentUser = async(req, res) => {
     try{
 
-        const user = await UserModel.findById(req.userId);
+        const user = await Usermodel.findById(req.userId);
 
         if(!user){
             return res.status(404).json({
