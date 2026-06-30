@@ -1,12 +1,12 @@
-import UserModel from '../models/UserModel.js';
+import Usermodel from '../models/usermodel.js';
 import { generateToken } from '../utils/token.js';
 
 export const googleAuth = async (req, res) => {
     try{
         const {name, email} = req.body;
-        let user = await UserModel.findOne({ email });
+        let user = await Usermodel.findOne({ email });
         if(!user){
-            user = await UserModel.create({ name, email})
+            user = await Usermodel.create({ name, email})
         }
         const token = await generateToken(user._id);
         res.cookie('token', token, {
