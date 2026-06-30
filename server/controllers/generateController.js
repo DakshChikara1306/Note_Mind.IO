@@ -1,7 +1,7 @@
-import Usermodel from "../models/userModel.js"
+import Usermodel from "../models/usermodel.js";
 import { generateGeminiResponse } from "../services/geminiServices.js"
 import { buildPrompt } from "../utils/promptBuilder.js"
-import NotesModel from "../models/notesModel.js"
+import NotesModel from "../models/notesmodel.js"
 
 
 export const generateNotes = async (req, res) => {
