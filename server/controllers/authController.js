@@ -24,11 +24,17 @@ export const googleAuth = async (req, res) => {
 }
 
 export const logout = async (req, res) => {
-    try{
-        await res.clearCookie('token')
-        return res.status(200).json({ message: 'User logged out successfully' });
-
-    }catch (error) {
-        return res.status(500).json({ message: 'Internal server error' });
-    }
+  try {
+    // 💥 FIX: Match the configuration options used during cookie creation
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none'
+    });
+    
+    return res.status(200).json({ message: 'User logged out successfully' });
+  } catch (error) {
+    console.error('Error in logout:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
 }
