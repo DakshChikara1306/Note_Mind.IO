@@ -15,7 +15,7 @@ const app = express();
 
 // 1. CORS MUST GO FIRST
 app.use(cors({
-    origin: 'https://note-mind-io-client.onrender.com',
+    origin: process.env.CLIENT_URL,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
 }));
